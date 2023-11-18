@@ -1,28 +1,35 @@
-import cv2
 import numpy as np
 import matplotlib.pyplot as plt
+from PIL import Image
 
-imgpath = "torazo6.jpg"
-img = cv2.imread(imgpath, cv2.IMREAD_GRAYSCALE)  # Convert to grayscale
+def create_color_graph(image_array, block_size):
+    height, width, _ = image_array.shape
+    graph = []
 
-# Resize the image to a lower quality
-new_height = 1000
-aspect_ratio = img.shape[1] / img.shape[0]
-new_width = int(new_height * aspect_ratio)
-resized_img = cv2.resize(img, (new_width, new_height))
+    for i in range(0, height, block_size):
+        for j in range(0, width, block_size):
+            block_color = np.mean(image_array[i:i+block_size, j:j+block_size], axis=(0, 1))
+            graph.append([i, j, *block_color])
 
-# Apply Gaussian blur
-blurred_img = cv2.GaussianBlur(resized_img, (5, 5), 0)  # You can adjust the kernel size (e.g., (5, 5)) and standard deviation (e.g., 0)
+    return np.array(graph)
 
-edgesx = cv2.Sobel(blurred_img, -1, dx=1, dy=0, ksize=1)
-edgesy = cv2.Sobel(blurred_img, -1, dx=0, dy=1, ksize=1)
+def plot_color_graph(color_graph, image_shape, block_size):
+    plt.scatter(color_graph[:, 1], color_graph[:, 0], c=color_graph[:, 2:] / 255.0, marker='.', s=block_size**2)
+    plt.axis('off')
+    plt.gca().set_aspect('equal', adjustable='box')  # Ensure equal aspect ratio
+    plt.xlim(0, image_shape[1])
+    plt.ylim(image_shape[0], 0)  # Flip y-axis to match image orientation
+    plt.show()
 
-# Calculate the magnitude of edges using Euclidean distance
-edges_magnitude = np.sqrt(edgesx**2 + edgesy**2)
+# Example usage
+image_path = '94224_video_512x512.png'
+block_size = 8
 
-# Increase sensitivity by multiplying by a constant factor (e.g., 2)
-sensitive_edges = edges_magnitude * 2
+# Read the image as a NumPy array
+image_array = np.array(Image.open(image_path))
 
+# Create the color graph with each dot representing a 2x2 block
+color_graph = create_color_graph(image_array, block_size)
 
-plt.imshow(sensitive_edges, cmap='gray')
-plt.show()
+# Plot the color graph
+plot_color_graph(color_graph, image_array.shape[:2], block_size)
