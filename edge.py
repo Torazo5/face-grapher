@@ -1,35 +1,25 @@
+import cv2 as cv
 import numpy as np
-import matplotlib.pyplot as plt
-from PIL import Image
 
-def create_color_graph(image_array, block_size):
-    height, width, _ = image_array.shape
-    graph = []
+# Load the image
+image_path = 'torazotext.jpg'
+frame = cv.imread(image_path)
 
-    for i in range(0, height, block_size):
-        for j in range(0, width, block_size):
-            block_color = np.mean(image_array[i:i+block_size, j:j+block_size], axis=(0, 1))
-            graph.append([i, j, *block_color])
+# Check if the image is loaded successfully
+if frame is None:
+    print("Error: Could not open or read the image.")
+    exit()
 
-    return np.array(graph)
+#cv.imshow('Original Image', frame)
 
-def plot_color_graph(color_graph, image_shape, block_size):
-    plt.scatter(color_graph[:, 1], color_graph[:, 0], c=color_graph[:, 2:] / 255.0, marker='.', s=block_size**2)
-    plt.axis('off')
-    plt.gca().set_aspect('equal', adjustable='box')  # Ensure equal aspect ratio
-    plt.xlim(0, image_shape[1])
-    plt.ylim(image_shape[0], 0)  # Flip y-axis to match image orientation
-    plt.show()
+# Laplacian edge detection
+laplacian = cv.Laplacian(frame, cv.CV_64F)
+laplacian = np.uint8(np.abs(laplacian))
+#cv.imshow('Laplacian', laplacian)
 
-# Example usage
-image_path = '94224_video_512x512.png'
-block_size = 8
+# Canny edge detection
+edges = cv.Canny(frame, 150, 150)
+cv.imshow('Canny', edges)
 
-# Read the image as a NumPy array
-image_array = np.array(Image.open(image_path))
-
-# Create the color graph with each dot representing a 2x2 block
-color_graph = create_color_graph(image_array, block_size)
-
-# Plot the color graph
-plot_color_graph(color_graph, image_array.shape[:2], block_size)
+cv.waitKey(0)
+cv.destroyAllWindows()
